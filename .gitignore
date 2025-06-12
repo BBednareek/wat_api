@@ -1,0 +1,33 @@
+
+---
+
+### 📄 `.gitignore`
+
+```gitignore
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Caches
+.cache/
+.tox/
+.coverage
+coverage.xml
+
+# Pytest
+.pytest_cache/
+.junit.xml
+
+# VSCode
+.vscode/
+
+# Environments
+.env
+*.env
+
+# MacOS
+.DS_Store
+
+# Python virtual environments
+venv/
