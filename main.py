@@ -1,82 +1,78 @@
-from fastapi import FastAPI, HTTPException, Query
-from google.cloud import firestore
-from os import environ
-from typing import Any
-from google.cloud.firestore_v1 import Client
-from parser import parse_activity, parse_block
-from datetime import datetime, timedelta
+from fastapi import FastAPI, Request
+from starlette.responses import JSONResponse
+from exceptions.schedule_exceptions import ScheduleNotFoundError, InvalidDayNameError, FirestoreConnectionError, \
+    ActivityParsingError
+from routes.schedule_route import router
 
-environ["GOOGLE_APPLICATION_CREDENTIALS"] = "key.json"
+app: FastAPI = FastAPI(title="WAT Schedule API")
+app.include_router(router)
 
-app: FastAPI = FastAPI()
-db: Client = firestore.Client()
-
-# Mapowanie nazw dni na indeksy
-DAYS_INDEX = {
-    "pon.": 0,
-    "wt.": 1,
-    "śr.": 2,
-    "czw.": 3,
-    "pt.": 4,
-    "sob.": 5,
-    "niedz.": 6
-}
-
-@app.get("/schedule/{group}/{month}/{week}")
-async def get_week_schedule(
-    group: str,
-    month: str,
-    week: str,
-    start_date: str = Query(..., regex=r"^\d{2}\.\d{2}\.\d{4}$")
-):
+@app.exception_handler(FirestoreConnectionError)
+async def firestore_error_handler(_request: Request, _exc: FirestoreConnectionError):
     """
-    Zwraca cały tydzień planu zajęć.
-    start_date: np. 03.03.2025 (poniedziałek danego tygodnia)
+    Handles Firestore connection errors.
+
+    Returns:
+        JSONResponse: 503 Service Unavailable with an appropriate error message.
     """
-    try:
-        week_collection = (
-            db.collection("groups")
-            .document(group)
-            .collection(month)
-            .document(week)
-            .collection("days")
-        )
+    return JSONResponse(
+        status_code=503,
+        content={"error": "Failed to connect to Firestore. Please try again later."}
+    )
 
-        documents = week_collection.stream()
-        start_dt = datetime.strptime(start_date, "%d.%m.%Y")
-        week_data = []
 
-        for doc in documents:
-            day_name = doc.id  # np. "śr.", "pon."
-            if day_name not in DAYS_INDEX:
-                continue
+@app.exception_handler(ScheduleNotFoundError)
+async def not_found_handler(_request: Request, _exc: ScheduleNotFoundError):
+    """
+    Handles cases where the requested schedule is not found.
 
-            offset = DAYS_INDEX[day_name]
-            actual_date = start_dt + timedelta(days=offset)
-            actual_date_str = actual_date.strftime("%d.%m.%Y")
+    Returns:
+        JSONResponse: 404 Not Found with an appropriate error message.
+    """
+    return JSONResponse(
+        status_code=404,
+        content={"error": "Schedule not found for the given week."}
+    )
 
-            data: dict[str, Any] = doc.to_dict()
-            raw_entries: list = data.get("entries", [])
 
-            parsed_entries: list = []
-            for entry in raw_entries:
-                raw_block = entry.get("block", "")
-                parsed = parse_activity(entry.get("activity", ""))
-                parsed["block_raw"] = raw_block
-                parsed["block_time"] = parse_block(raw_block)
-                parsed_entries.append(parsed)
+@app.exception_handler(InvalidDayNameError)
+async def invalid_day_handler(_request: Request, _exc: InvalidDayNameError):
+    """
+    Handles unsupported day names in Firestore documents.
 
-            week_data.append({
-                "date": f"{actual_date_str} ({day_name})",
-                "entries": parsed_entries
-            })
+    Returns:
+        JSONResponse: 422 Unprocessable Entity with an appropriate error message.
+    """
+    return JSONResponse(
+        status_code=422,
+        content={"error": "Unsupported day name found in schedule data."}
+    )
 
-        if not week_data:
-            raise HTTPException(status_code=404, detail="Week not found")
 
-        return {
-            start_date: sorted(week_data, key=lambda x: datetime.strptime(x["date"][:10], "%d.%m.%Y"))
-        }
+@app.exception_handler(ActivityParsingError)
+async def parsing_error_handler(_request: Request, _exc: ActivityParsingError):
+    """
+    Handles errors during parsing of activity strings.
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    Returns:
+        JSONResponse: 400 Bad Request with an appropriate error message.
+    """
+    return JSONResponse(
+        status_code=400,
+        content={"error": "Failed to parse an activity entry."}
+    )
+
+
+@app.exception_handler(Exception)
+async def generic_error_handler(_request: Request, _exc: Exception):
+    """
+    Handles all unexpected internal server errors.
+
+    Returns:
+        JSONResponse: 500 Internal Server Error with a generic message.
+    """
+    return JSONResponse(
+        status_code=500,
+        content={"error": "An unexpected server error occurred."}
+    )
+
