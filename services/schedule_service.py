@@ -14,7 +14,7 @@ environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'key.json'
 db: firestore.Client = firestore.Client()
 
 
-async def get_schedule_week(group: str, month: str, week: str, start_date: str) -> ScheduleWeek:
+async def  get_schedule_week(group: str, month: str, week: str, start_date: str) -> ScheduleWeek:
     """
     Retrieves the full weekly schedule for a given group from Firestore.
 

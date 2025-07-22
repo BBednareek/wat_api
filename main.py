@@ -2,10 +2,12 @@ from fastapi import FastAPI, Request
 from starlette.responses import JSONResponse
 from exceptions.schedule_exceptions import ScheduleNotFoundError, InvalidDayNameError, FirestoreConnectionError, \
     ActivityParsingError
-from routes.schedule_route import router
+import routes.schedule_route as sr
+import routes.group_route as gr
 
 app: FastAPI = FastAPI(title="WAT Schedule API")
-app.include_router(router)
+app.include_router(sr.router)
+app.include_router(gr.router)
 
 @app.exception_handler(FirestoreConnectionError)
 async def firestore_error_handler(_request: Request, _exc: FirestoreConnectionError):

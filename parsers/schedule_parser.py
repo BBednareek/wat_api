@@ -18,8 +18,8 @@ def parse_activity(raw: str) -> Dict[str, Optional[str]]:
     if len(parts) == 2:
         raw, building = parts[0], parts[1]
 
-    type_codes = ['Ep', 'E', 'L', 'r', 'ć', 'w']
-    type_pattern = '|'.join(type_codes)
+    type_codes: list[str] = ['Ep', 'E', 'L', 'r', 'ć', 'w', 'Zp', 'Zal']
+    type_pattern: str = '|'.join(type_codes)
 
     patterns = [
         rf'^([A-Za-z0-9]+?)({type_pattern})(\d+)$',
