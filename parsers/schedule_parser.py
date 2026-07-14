@@ -18,7 +18,7 @@ def parse_activity(raw: str) -> Dict[str, Optional[str]]:
     if len(parts) == 2:
         raw, building = parts[0], parts[1]
 
-    type_codes: list[str] = ['Ep', 'E', 'L', 'r', 'ć', 'w', 'Zp', 'Zal']
+    type_codes: list[str] = ['Ep', 'E', 'L', 'r', 'ć', 'w', 'Zp', 'Zal', 'Inne']
     type_pattern: str = '|'.join(type_codes)
 
     patterns = [
