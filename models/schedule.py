@@ -21,5 +21,5 @@ class ScheduleWeek(RootModel[dict[str, list[ScheduleDay]]]):
     """Root-level dictionary: start_date => list of days"""
     pass
 
-class GroupedGroups(BaseModel):
-    groups_by_faculty: dict[str, list[str]]
+class GroupsInDepartment(BaseModel):
+    groups_by_department: list[str]

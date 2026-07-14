@@ -9,6 +9,6 @@ async def schedule_week(
         group: str,
         month: str,
         week: str,
-        start_date: str = Query(..., regex=r"^\d{2}\.\d{2}\.\d{4}$")
+        start_date: str = Query(..., pattern=r"^\d{2}\.\d{2}\.\d{4}$")
 ) -> ScheduleWeek:
     return await get_schedule_week(group, month, week, start_date)
