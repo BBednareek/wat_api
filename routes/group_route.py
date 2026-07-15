@@ -14,3 +14,5 @@ async def grouped_groups(department: str)-> GroupsInDepartment:
             GroupedGroups (dict[str, list[str]]): Mapping of faculty prefixes to group names.
         """
     return await get_grouped_faculty_groups(department=department)
+
+#TODO parser opisu planu psuje wyglad
